@@ -48,7 +48,8 @@ class AutoTrader{
     }
 
     async run(){
-        this.data=await axios.get('https://dapi.binance.com/dapi/v1/klines?symbol=btcusd_perp&interval=5m').data
+        const response=await axios.get('https://dapi.binance.com/dapi/v1/klines?symbol=btcusd_perp&interval=5m')
+        data = response.data
         this.ws=new WebSocket('wss://dstream.binance.com/ws')
         ws.onopen= (event)=>{            
             console.log('socket connected')
@@ -69,5 +70,5 @@ class AutoTrader{
             })
         }
     }
-
+    
 }
