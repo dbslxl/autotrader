@@ -5,10 +5,24 @@ const binanceURL = 'wss://dstream.binance.com/ws/btcusd_perp@kline_4h'
 
 class AutoTrader2 {
     constructor(symbols) {
+        this.isWatching = false
+        this.crossFlagList=[]
+
         for (symbol of symbols){
-            //setup crossFlag
-            //this.crossFlag={}            
+            //fetch obv240 data of the symbols from the api
+            //setup the crossFlag list
+            //this.crossFlag=[{symbol:'ethusd_perp',prev_cross:'up',cross:''},{symbol:'btcusd_perp',prev_cross:'up',cross:'up'}]            
         }
+    }
+
+    test(){
+        for (crossFlag of crossFlagList){
+
+        }
+
+        this.crossFlagList.filter((data)=>{
+            data.cross
+        })
     }
 
     run(){
@@ -19,10 +33,9 @@ class AutoTrader2 {
     stop(){
         
     }
-
     watch(){
         for (symbol in crossFlag){
-            //poll the server to check if obv240 is crossed.
+            //poll the api server to check if obv240 is crossed.
             //if crossed, set the cross flag and fire an crossed event.   
         }
     }
@@ -35,3 +48,17 @@ class AutoTrader2 {
         //monitor the buy history list and crossFlag list to check if the sell condition is met.
     }
 }
+
+class AutoBuyer {
+    constructor(){
+
+    }
+}
+
+class AutoSeller {
+    constructor(){
+
+    }
+}
+
+//evet type : upcross, downcross, buy, sell 
