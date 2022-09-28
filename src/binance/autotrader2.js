@@ -83,10 +83,13 @@ class AutoTrader {
     //     clearInterval(this.Obv15mTimer)
     // }
 
-    checkObv5m(){
+    async checkObv5m(){
         //5분 obv upcross 체크
+        response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=1d&limit=10`)
+        const obv5m=calculateObv(response.data)
         //현재 보유중인 포지션이 없으면 long 매수 
         //short 매도중이면 short 매수후 long 매수
+
         if(currentPosition==="short"){
             //api call to sell short
             //then api call to buy long
