@@ -7,17 +7,18 @@ const binaceAPIURL = 'https://fapi.binance.com'
 class AutoTrader {
     constructor(symbol) {
         this.symbol=symbol
-        this.prevCross=''
+
+        this.prevCross='' //up or down
+        this.currentPosition='' //long or short
         
         this.on('upcross',()=>{
-            this.Obv15mTimer&&clearInterval(this.Obv15mTimer);
+            this.Obv15mTimer&&clearInterval(this.Obv15mTimer)
             this.Obv5mTimer=setInterval(this.checkObv5m,1000)
         })
         this.on('donwcross',()=>{
-            this.Obv5mTimer&&clearInterval(this.Obv5mTimer);    
+            this.Obv5mTimer&&clearInterval(this.Obv5mTimer)   
             this.Obv15mTimer=setInterval(this.checkObv15m,1000)
-        })
-       
+        })      
         
         // this.isWatching = false
         // this.crossFlagList=[]
@@ -25,14 +26,26 @@ class AutoTrader {
     }
   
     run(){
-        this.OBV1dTimer=setInterval(checkOBV1d,1000)
+        this.prevCross = getCurrentCross()
+        this.CurrentPosition = getCurrentPosition()
+        this.Obv1dTimer=setInterval(checkObv1d,1000)
     }
 
     stop(){
-        clearInterval(this.OBV1dTimer&&this.OBV1dTimer)
+        clearInterval(this.Obv1dTimer&&this.Obv1dTimer)
+        clearInterval(this.Obv15mTimer&&this.Obv15mTimer)
+        clearInterval(this.Obv5mTimer&&this.Obv5mTimer)
+        this.prevCross=''
+        this.CurrentPosition=''
     }
    
     calculateObv(){
+        
+    }
+    getCurrentCross(){
+
+    }
+    getCurrentPosition(){
 
     }
     async checkObv1d(){
