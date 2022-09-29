@@ -1,74 +1,107 @@
 const WebSocket = require('ws')
 const axios = require('axios')
 
-const binanceURL = 'wss://dstream.binance.com/ws/btcusd_perp@kline_4h'
+//const binanceURL = 'wss://dstream.binance.com/ws/btcusd_perp@kline_4h'
+const binaceAPIURL = 'https://fapi.binance.com'
 
-ws = new WebSocket(binanceURL)
-//ws = new WebSocket(binanceURL)
-
-
-ws.onopen = (event)=>{
-    // webSocket.send(JSON.stringify(msg))
-    console.log('socket connected')
-    setTimeout(()=>{
-        // ws.send(JSON.stringify({
-        //     "method": "SUBSCRIBE",
-        //     "params":
-        //     [
-        //     "btcusdt@aggTrade",
-        //     "btcusdt@depth"
-        //     ],
-        //     "id": 1
-        //     }))
-    },3000)
-}
-
-
-ws.on('message', function message(data) {
-    console.log('received: %s', data);
-  });
-
-function sendData(ws){
-    ws.send(JSON.stringify({
-        "method": "SUBSCRIBE",
-        "params":
-        [
-        "btcusdt@aggTrade",
-        "btcusdt@depth"
-        ],
-        "id": 1
-    }))
-}
-
-class AutoTrader{
-    constructor(symbol){
+class AutoTrader {
+    constructor(symbol) {
         this.symbol=symbol
-        this.data=[]
+        this.delay=1000
+
+        this.prevCross='' //up or down
+        this.currentPosition='' //long or short
         
+        this.on('upcross',()=>{
+            this.Obv15mTimer&&clearInterval(this.Obv15mTimer)
+            this.Obv5mTimer=setInterval(this.checkObv5m.bind(this),1000)
+        })
+        this.on('donwcross',()=>{
+            this.Obv5mTimer&&clearInterval(this.Obv5mTimer)   
+            this.Obv15mTimer=setInterval(this.checkObv15m.bind(this),1000)
+        })      
+        
+        // this.isWatching = false
+        // this.crossFlagList=[]
+
+    }
+  
+    run(){
+        this.prevCross = getCurrentCross()
+        this.CurrentPosition = getCurrentPosition()
+        this.Obv1dTimer=setInterval(this.checkObv1d.bind(this),1000)
     }
 
-    async run(){
-        const response=await axios.get('https://dapi.binance.com/dapi/v1/klines?symbol=btcusd_perp&interval=5m')
-        data = response.data
-        this.ws=new WebSocket('wss://dstream.binance.com/ws')
-        ws.onopen= (event)=>{            
-            console.log('socket connected')
-            setTimeout(()=>{
-                console.log('sending message to the server')
-                ws.send(JSON.stringify({
-                    "method": "SUBSCRIBE",
-                    "params":
-                    [
-                    "btcusd_perp@kline_5m",
-                    "ethusd_perp@kline_5m"
-                    ],
-                    "id": 1
-                    }))
-            },3000)
-            ws.on('message', (data)=>{
-                console.log('received: %s', data);
-            })
+    stop(){
+        clearInterval(this.Obv1dTimer&&this.Obv1dTimer) // maybe no need to check if the timer exists. clearInterval does nothing if there is no timer
+        clearInterval(this.Obv15mTimer&&this.Obv15mTimer)
+        clearInterval(this.Obv5mTimer&&this.Obv5mTimer)
+        this.prevCross=''
+        this.CurrentPosition=''
+    }
+   
+    calculateObv(){
+
+    }
+    getCurrentCross(){
+
+    }
+    getCurrentPosition(){
+
+    }
+    async checkObv1d(){
+        //check 1d obv by polling the api
+        response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=1d&limit=10`)
+        if(calculateObv(response.data)>0){
+            //upcross 시 업크로스 이벤트 emit
+            if(this.prevCross!=='up'){
+                this.prevCross='up'
+                this.emit('upcross')
+            }
+        }else if(calculateObv(response.data)<0){
+            //downcross 시 다운크로스 이벤트 emit
+            if(this.prevCross!=='down'){
+                this.prevCross='down'
+                this.emit('downcross')
+            }
         }
+    }
+    //To do : Change this to nested setTimeOut instead of setInterval.
+    // checkObv5m(){
+    //     //5분 obv upcross 체크
+    //     //현재 보유중인 포지션이 없으면 long 매수 
+    //     //foot 매도중이면 foot매수후 long 매수
+    //     if(currentPosition==="short"){
+
+    //     }
+    //     clearInterval(this.Obv5mTimer)        
+    // }
+    // checkObv15m(){
+    //     //15분 obv downcross 체크
+    //     //현재 보유중인 포지션이 없으면 foot 매도
+    //     //long 매수중이면 long매도후 foot 매도
+    //     clearInterval(this.Obv15mTimer)
+    // }
+
+    async checkObv5m(){
+        //5분 obv upcross 체크
+        response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=1d&limit=10`)
+        const obv5m=calculateObv(response.data)
+        //현재 보유중인 포지션이 없으면 long 매수 
+        //short 매도중이면 short 매수후 long 매수
+
+        if(currentPosition==="short"){
+            //api call to sell short
+            //then api call to buy long
+        }
+        
+        setTimeout(checkObv5m.bind(this),this.delay)        
+    }
+    checkObv15m(){
+        //15분 obv downcross 체크
+        //현재 보유중인 포지션이 없으면 foot 매도
+        //long 매수중이면 long매도후 foot 매도
+        clearInterval(this.Obv15mTimer)
     }
     
 }
