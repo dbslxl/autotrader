@@ -13,6 +13,20 @@ const axios = require('axios')
 // axios.get('https://dapi.binance.com/dapi/v1/klines?symbol=btcusd_perp&interval=5m&limit=1500')
 //     .then((response)=>console.log(response.data,response.data.length))
 
-let crossFlagList=[{symbol:'ethusd_perp',prev_cross:'up',cross:''},{symbol:'btcusd_perp',prev_cross:'up',cross:'up'},{symbol:'btcusd_perp',prev_cross:'up',cross:'up'},{symbol:'btcusd_perp',prev_cross:'up'}]
+// let crossFlagList=[{symbol:'ethusd_perp',prev_cross:'up',cross:''},{symbol:'btcusd_perp',prev_cross:'up',cross:'up'},{symbol:'btcusd_perp',prev_cross:'up',cross:'up'},{symbol:'btcusd_perp',prev_cross:'up'}]
 
-console.log(crossFlagList.filter(crossFlag=>!crossFlag.cross))
+// console.log(crossFlagList.filter(crossFlag=>!crossFlag.cross))
+let cnt = 0;
+function test(){
+    console.log(cnt++)
+    let delay=Math.random()*10000
+    
+    if(cnt>10){
+        console.log('exiting...')
+        return
+    }
+    console.log(`next function call in ${delay/1000} seconds...`)
+    setTimeout(test,delay)
+}
+
+test()
