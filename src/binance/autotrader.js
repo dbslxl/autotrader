@@ -2,35 +2,34 @@ const axios = require('axios')
 const EventEmitter = require('events')
 
 const binaceAPIURL = 'https://fapi.binance.com'
-class AutoTrader {
+class AutoTrader extends EventEmitter{
     constructor(symbol) {
+        super()
         this.symbol=symbol        
-        this.isRunning=false;
-        
+        this.isRunning=false;        
         this.currentCross='' //up or down
-        this.currentPosition='' //long or short     
-    }
-    
-    init(){
+        this.currentPosition='' //long or short
         this.on('upcross',()=>{           
             console.log('upcross event happend ')
             this.checkObv5m()
         })
         this.on('downcross',()=>{          
-            console.log('down cross even hapened')
+            console.log('down cross event hapened')
             this.checkObv15m()
         }) 
-        setTimeout(()=>{this.emit('downcross')},10000) //It doesn't work if not using arrow function
-    }
-    async run(){
-        this.init()
+        setTimeout(()=>{this.emit('upcross')},10000) //It doesn't work if not using arrow function     
+    }    
+    
+    async run(){       
         this.currentCross = await this.getCurrentCross()
-        console.log(`Initial cross ${this.currentCross}`)
+        console.log(`Initial cross : ${this.currentCross}`)
         this.currentPosition = this.getCurrentPosition()
+        console.log(`Initial position : ${this.currentPosition}`)
         this.isRunning=true
         this.checkObv1d()      
     }
     stop(){
+        console.log('stop method gets called.')
         this.isRunning=false
         this.currentCross=''
         this.currentPosition=''
@@ -56,25 +55,7 @@ class AutoTrader {
         })
         return obv
     }
-
-    // async checkObv1d(){
-    //     const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=1d&limit=10`)
-    //     const Obv1d= this.calculateObv(response.data)
-    //     console.log(`Current Obv 1Day is ${Obv1d}`)
-    //     if(Obv1d>0){
-    //         if(this.currentCross!=='up'){
-    //             this.currentCross='up'
-    //             this.emit('upcross')
-    //             console.log('Upcross event happened!')
-    //         }
-    //     }else if(Obv1d<0){
-    //         if(this.currentCross!=='down'){
-    //             this.currentCross='down'
-    //             this.emit('downcross')
-    //             console.log('Downcross event happened!')
-    //         }
-    //     }
-    // }
+    
     async checkObv1d(){
         if(!this.isRunning) return
         let interval=Math.random()*10000
@@ -86,13 +67,13 @@ class AutoTrader {
             if(this.currentCross!=='up'){
                 this.currentCross='up'
                 this.emit('upcross')
-                console.log('Upcross event is fired!')
+                console.log('Upcross event fired!')
             }
         }else if(Obv1d<0){
             if(this.currentCross!=='down'){
                 this.currentCross='down'
                 this.emit('downcross')
-                console.log('Downcross event is fired!')
+                console.log('Downcross event fired!')
             }
         }
         console.log(`interval is ${interval}`)
@@ -115,6 +96,7 @@ class AutoTrader {
                 console.log('Buy long!!!')
             }else{
                 //throw new Error("error in obv5")
+                console.log('obv 1d up and but position is wrong weird..')
             }
             return            
         }
@@ -149,6 +131,7 @@ class AutoTrader {
 }
 
 const autoTrader = new AutoTrader('btcusdt');
-Object.assign(autoTrader,EventEmitter.prototype)
+//Object.assign(autoTrader,EventEmitter.prototype)
 autoTrader.run()
-setTimeout(autoTrader.stop,1000)// need some research about JavaScript Lexical environment.
+setTimeout(autoTrader.stop.bind(autoTrader),20000)// need some research about JavaScript Lexical environment.
+setTimeout(autoTrader.run.bind(autoTrader),25000)
