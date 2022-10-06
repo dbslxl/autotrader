@@ -1,7 +1,6 @@
 const axios = require('axios')
 const EventEmitter = require('events')
-
-const binaceAPIURL = 'https://fapi.binance.com'
+const Binance = require('node-binance-api')
 class AutoTrader extends EventEmitter{
     constructor(symbol) {
         super()
