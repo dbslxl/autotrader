@@ -7,7 +7,11 @@ class AutoTrader extends EventEmitter{
         this.symbol=symbol        
         this.isRunning=false;        
         this.currentCross='' //up or down
-        this.currentPosition='' //long or short
+        //this.currentPosition='' //long or short
+        this.binance=new Binance().options({
+            APIKEY:'rQkKYkK7sa286zYyjqvygn8J3O6UXGydLDeRvhOdUUx8G1MMh0TPp5RiRJ9QG7xL',
+            APISECRET:'UyzgLYvAdoTp4CQmc4JITsIQGPxuxMjAPaSroFe4sTUNweYugIW6PlW9to52S9yt'
+        })
         this.on('upcross',()=>{           
             console.log('upcross event happend ')
             this.checkObv5m()
@@ -15,15 +19,20 @@ class AutoTrader extends EventEmitter{
         this.on('downcross',()=>{          
             console.log('down cross event hapened')
             this.checkObv15m()
-        }) 
-        setTimeout(()=>{this.emit('upcross')},10000) //It doesn't work if not using arrow function     
-    }    
+        })
+        //setTimeout(()=>{this.emit('upcross')},10000) //It doesn't work if not using arrow function     
+    }
+    
+    async init(){
+        this.currentCross = await this.getCurrentCross()
+        this.account=await this.binance.futuresAccount()
+        this.currentPositionAmount=Number(this.account.positions.find((position)=>position.symbol===this.symbol).positionAmt)
+        console.log(`Initial cross : ${this.currentCross}`)        
+        console.log('Initial position :', this.currentPositionAmount)
+    }
     
     async run(){       
-        this.currentCross = await this.getCurrentCross()
-        console.log(`Initial cross : ${this.currentCross}`)
-        this.currentPosition = this.getCurrentPosition()
-        console.log(`Initial position : ${this.currentPosition}`)
+        await this.init();        
         this.isRunning=true
         this.checkObv1d()      
     }
@@ -39,10 +48,10 @@ class AutoTrader extends EventEmitter{
         let cross = this.calculateObv(response.data)>=0 ? "up" : "down"
         return cross;
     }
-    getCurrentPosition(){
-        //to do : need some research to check if it's possible to fetch account info from the binace api.
-        return 'long' //dummy data
-    }   
+    // getCurrentPosition(){
+    //     //to do : need some research to check if it's possible to fetch account info from the binace api.
+    //     return 'long' //dummy data
+    // }   
     calculateObv(dataList){
         let obv=0;
         dataList.forEach((data)=>{
@@ -123,13 +132,13 @@ class AutoTrader extends EventEmitter{
             return
         }
         console.log(`--15m obv is not down(${obv15m}) so looping again...`)
-        setTimeout(this.checkObv15m.bind(this),1000)        
+        setTimeout(this.checkObv15m.bind(this),1000)       
         
     }
     
 }
 
-const autoTrader = new AutoTrader('btcusdt');
+const autoTrader = new AutoTrader('BTCUSDT');
 //Object.assign(autoTrader,EventEmitter.prototype)
 autoTrader.run()
 setTimeout(autoTrader.stop.bind(autoTrader),20000)// need some research about JavaScript Lexical environment.
