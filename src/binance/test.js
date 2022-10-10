@@ -16,17 +16,26 @@ const axios = require('axios')
 // let crossFlagList=[{symbol:'ethusd_perp',prev_cross:'up',cross:''},{symbol:'btcusd_perp',prev_cross:'up',cross:'up'},{symbol:'btcusd_perp',prev_cross:'up',cross:'up'},{symbol:'btcusd_perp',prev_cross:'up'}]
 
 // console.log(crossFlagList.filter(crossFlag=>!crossFlag.cross))
-let cnt = 0;
-function test(){
-    console.log(cnt++)
-    let delay=Math.random()*10000
+
+// let cnt = 0;
+// function test(){
+//     console.log(cnt++)
+//     let delay=Math.random()*10000
     
-    if(cnt>10){
-        console.log('exiting...')
-        return
-    }
-    console.log(`next function call in ${delay/1000} seconds...`)
-    setTimeout(test,delay)
+//     if(cnt>10){
+//         console.log('exiting...')
+//         return
+//     }
+//     console.log(`next function call in ${delay/1000} seconds...`)
+//     setTimeout(test,delay)
+// }
+
+// test()
+
+function foo(){
+    this.a='aaa'
+    console.log(this)
 }
 
-test()
+let result=new foo()
+console.log('result : ',result)

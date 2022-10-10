@@ -7,7 +7,7 @@ class AutoTrader extends EventEmitter{
         this.symbol=symbol        
         this.isRunning=false;        
         this.currentCross='' //up or down
-        //this.currentPosition='' //long or short
+       
         this.binance=new Binance().options({
             APIKEY:'rQkKYkK7sa286zYyjqvygn8J3O6UXGydLDeRvhOdUUx8G1MMh0TPp5RiRJ9QG7xL',
             APISECRET:'UyzgLYvAdoTp4CQmc4JITsIQGPxuxMjAPaSroFe4sTUNweYugIW6PlW9to52S9yt'
@@ -26,9 +26,11 @@ class AutoTrader extends EventEmitter{
     async init(){
         this.currentCross = await this.getCurrentCross()
         this.account=await this.binance.futuresAccount()
-        this.currentPositionAmount=Number(this.account.positions.find((position)=>position.symbol===this.symbol).positionAmt)
+        this.position=this.account.positions.find((position)=>position.symbol===this.symbol)
+        this.asset=this.account.assets.find((asset)=>asset.asset==='USDT')
         console.log(`Initial cross : ${this.currentCross}`)        
-        console.log('Initial position :', this.currentPositionAmount)
+        console.log('Initial position :', this.position)
+        console.log('Initial Asset : ',this.asset)
     }
     
     async run(){       
@@ -95,16 +97,12 @@ class AutoTrader extends EventEmitter{
         const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=5m&limit=10`)
         const obv5m=this.calculateObv(response.data)
         if (obv5m>0){
-            if(this.currentPosition==="short"){
-                //api call to sell short
-                //then api call to buy long
+            if(Number(this.position.positionAmt)===0){
+                this.binance.futuresMarketBuy(symbol,amt)
                 console.log('Sell short and Buy long!!!')
-            }else if(this.currentPosition===''){
-                //api call to buy long
+            }else if(Number(this.currentPosition)<=0){
+                this.binance.futuresMarketBuy(symbol,amt*2)
                 console.log('Buy long!!!')
-            }else{
-                //throw new Error("error in obv5")
-                console.log('obv 1d up and but position is wrong weird..')
             }
             return            
         }
@@ -120,14 +118,12 @@ class AutoTrader extends EventEmitter{
         const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=15m&limit=10`)
         const obv15m=this.calculateObv(response.data)
         if (obv15m<0){
-            if(this.currentPosition==="long"){
-                //api call to sell long
-                //then api call to buy short
+            if(Number(this.position.positionAmt)===0){
+                this.binance.futuresMarketBuy(symbol,amt)
+                
                 console.log(`buy the assets! and exiting...obv15m(${obv15m})`)
-            }else if(this.currentPosition===''){
-                //api call to buy short
-            }else{
-                throw new Error("error in obv15")
+            }else if(Number(this.position.positionAmt)>=0){
+                this.binance.futuresMarketBuy(symbol,amt*2)
             }
             return
         }

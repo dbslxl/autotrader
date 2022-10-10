@@ -5,12 +5,12 @@ const binance = new Binance().options({
 })
 
 async function test(){
-    // console.info(await binance.futuresAccount())
-    console.info(await binance.futuresBalance())
+    //console.info(await binance.futuresAccount())
+    // console.info(await binance.futuresBalance())
 
-    // let account=await binance.futuresAccount()
-    // console.log(account.positions.filter((data)=>data.symbol==='ETHUSDT'))
-
+    let account=await binance.futuresAccount()
+    console.log(account.positions.filter((data)=>data.symbol==='ETHUSDT'))
+    console.log(account.assets.find((asset)=>asset.asset==='USDT'))
     //console.info(await binance.futuresPositionRisk())
 
     // let position_data = await binance.futuresPositionRisk(), markets = Object.keys( position_data );    
