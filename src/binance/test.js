@@ -1,41 +1,153 @@
-// const fetch =require('node-fetch')
 const axios = require('axios')
-// import axios from 'axios'
-// import fetch from 'node-fetch'
-
-// axios.get('https://dapi.binance.com/dapi/v1/klines?symbol=btcusd_perp&interval=5m')
-//     .then((response)=>response.data)
-//     .then((data)=>console.log(data))
-
-// axios.get('https://dapi.binance.com/dapi/v1/klines?symbol=btcusd_perp&interval=5m')
-// .then((response)=>console.log(response.data))
-
-// axios.get('https://dapi.binance.com/dapi/v1/klines?symbol=btcusd_perp&interval=5m&limit=1500')
-//     .then((response)=>console.log(response.data,response.data.length))
-
-// let crossFlagList=[{symbol:'ethusd_perp',prev_cross:'up',cross:''},{symbol:'btcusd_perp',prev_cross:'up',cross:'up'},{symbol:'btcusd_perp',prev_cross:'up',cross:'up'},{symbol:'btcusd_perp',prev_cross:'up'}]
-
-// console.log(crossFlagList.filter(crossFlag=>!crossFlag.cross))
-
-// let cnt = 0;
-// function test(){
-//     console.log(cnt++)
-//     let delay=Math.random()*10000
+const EventEmitter = require('events')
+const Binance = require('node-binance-api')
+class AutoTrader extends EventEmitter{
+    constructor(symbol) {
+        super()
+        this.symbol=symbol        
+        this.isRunning=false;        
+        this.currentCross='' //up or down
+       
+        this.binance=new Binance().options({
+            APIKEY:'rQkKYkK7sa286zYyjqvygn8J3O6UXGydLDeRvhOdUUx8G1MMh0TPp5RiRJ9QG7xL',
+            APISECRET:'UyzgLYvAdoTp4CQmc4JITsIQGPxuxMjAPaSroFe4sTUNweYugIW6PlW9to52S9yt'
+        })
+        this.on('upcross',()=>{           
+            console.log('upcross event happend ')
+            this.checkObv5m()
+        })
+        this.on('downcross',()=>{          
+            console.log('down cross event hapened')
+            this.checkObv15m()
+        })
+        this.minimumAmt={"BTCUSDT":0.001,"ETHUSDT":0.004}
+        //setTimeout(()=>{this.emit('upcross')},10000) //It doesn't work if not using arrow function     
+    }
     
-//     if(cnt>10){
-//         console.log('exiting...')
-//         return
-//     }
-//     console.log(`next function call in ${delay/1000} seconds...`)
-//     setTimeout(test,delay)
-// }
+    async init(){
+        this.currentCross = await this.getCurrentCross()
+        this.account=await this.binance.futuresAccount()
+        this.position=this.account.positions.find((position)=>position.symbol===this.symbol)
+        this.asset=this.account.assets.find((asset)=>asset.asset==='USDT')
+        console.log(`Initial cross : ${this.currentCross}`)        
+        console.log('Initial position :', this.position)
+        console.log('Initial Asset : ',this.asset)
+    }
+    
+    async run(){       
+        await this.init();        
+        this.isRunning=true
+        this.checkObv1d()      
+    }
+    stop(){
+        console.log('stop method gets called.')
+        this.isRunning=false
+        this.currentCross=''
+        this.currentPosition=''
+    }
 
-// test()
+    async getCurrentCross(){
+        const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=1d&limit=10`)
+        let cross = this.calculateObv(response.data)>=0 ? "up" : "down"
+        return cross;
+    }
+  
+    calculateObv(dataList){
+        let obv=0;
+        dataList.forEach((data)=>{
+            if(Number(data[4])-Number(data[1])>0){
+                obv+=Number(data[5])
+            }else if(Number(data[4])-Number(data[1]<0)){
+                obv-=Number(data[5])
+            }
+        })
+        return obv
+    }
+    
+    async checkObv1d(){
+        if(!this.isRunning) return
+        let interval=Math.random()*10000
 
-function foo(){
-    this.a='aaa'
-    console.log(this)
+        const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=1d&limit=10`)
+        const Obv1d= this.calculateObv(response.data)
+        console.log(`Current Obv 1Day is ${Obv1d}`)
+        if(Obv1d>0){
+            if(this.currentCross!=='up'){
+                this.currentCross='up'
+                this.emit('upcross')
+                console.log('Upcross event fired!')
+            }
+        }else if(Obv1d<0){
+            if(this.currentCross!=='down'){
+                this.currentCross='down'
+                this.emit('downcross')
+                console.log('Downcross event fired!')
+            }
+        }
+        console.log(`interval is ${interval}`)
+        setTimeout(this.checkObv1d.bind(this),interval)
+    }        
+    async checkObv5m(){        
+        if(this.currentCross!=='up'){
+            console.log('check 5m obv function is ended because current cross is not up')
+            return
+        }        
+        const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=5m&limit=10`)
+        const obv5m=this.calculateObv(response.data)
+        if (obv5m>0){
+            const quote = await binance.futuresQuote( symbol )
+            const amt=Number(this.asset.walletBalance)/10/Number(quote.askPrice)
+            if (amt<minimumAmt[symbol]){
+                console.log("not enough margin")
+                return
+            }
+            if(Number(this.position.positionAmt)===0){
+                this.binance.futuresMarketBuy(symbol,amt)
+                console.log('Buy long')
+            }else if(Number(this.position.positionAmt)<=0){
+                this.binance.futuresMarketBuy(symbol,Math.abs(this.position.positionAmt)+amt)
+                console.log('Sell short and Buy long')
+            }
+            return            
+        }
+        console.log(`--5m obv is not up(${obv5m}) so looping again...`)
+        setTimeout(this.checkObv5m.bind(this),1000)        
+    }
+
+    async checkObv15m(){
+        if(this.currentCross!=='down'){
+            console.log('check 15m obv function is ended because current cross is not down')
+            return
+        }
+        const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=15m&limit=10`)
+        const obv15m=this.calculateObv(response.data)
+        if (obv15m<0){
+            const quote = await binance.futuresQuote( symbol )
+            const amt=Number(this.asset.walletBalance)/10/Number(quote.bidPrice)
+            if (amt<minimumAmt[symbol]){
+                console.log("not enough margin")
+                return
+            }
+            if(Number(this.position.positionAmt)===0){
+                this.binance.futuresMarketSell(symbol,amt)
+                
+                console.log(`buy the assets! and exiting...obv15m(${obv15m})`)
+            }else if(Number(this.position.positionAmt)>=0){
+                this.binance.futuresMarketSell(symbol,Math.abs(this.position.positionAmt)+amt)
+            }
+            return
+        }
+        console.log(`--15m obv is not down(${obv15m}) so looping again...`)
+        setTimeout(this.checkObv15m.bind(this),1000)       
+        
+    }
+    
 }
 
-let result=new foo()
-console.log('result : ',result)
+const autoTrader = new AutoTrader('BTCUSDT');
+//Object.assign(autoTrader,EventEmitter.prototype)
+autoTrader.run()
+setTimeout(autoTrader.checkObv15m.bind(autoTrader),25000)
+setTimeout(autoTrader.stop.bind(autoTrader),20000)// need some research about JavaScript Lexical environment.
+setTimeout(autoTrader.run.bind(autoTrader),25000)
+
