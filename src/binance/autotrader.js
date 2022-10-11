@@ -20,6 +20,7 @@ class AutoTrader extends EventEmitter{
             console.log('down cross event hapened')
             this.checkObv15m()
         })
+        this.minimumAmt={"BTCUSDT":0.001,"ETHUSDT":0.004}
         //setTimeout(()=>{this.emit('upcross')},10000) //It doesn't work if not using arrow function     
     }
     
@@ -50,10 +51,7 @@ class AutoTrader extends EventEmitter{
         let cross = this.calculateObv(response.data)>=0 ? "up" : "down"
         return cross;
     }
-    // getCurrentPosition(){
-    //     //to do : need some research to check if it's possible to fetch account info from the binace api.
-    //     return 'long' //dummy data
-    // }   
+  
     calculateObv(dataList){
         let obv=0;
         dataList.forEach((data)=>{
@@ -97,12 +95,18 @@ class AutoTrader extends EventEmitter{
         const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=5m&limit=10`)
         const obv5m=this.calculateObv(response.data)
         if (obv5m>0){
+            const quote = await binance.futuresQuote( symbol )
+            const amt=Number(this.asset.walletBalance)/10/Number(quote.askPrice)
+            if (amt<minimumAmt[symbol]){
+                console.log("not enough margin")
+                return
+            }
             if(Number(this.position.positionAmt)===0){
                 this.binance.futuresMarketBuy(symbol,amt)
-                console.log('Sell short and Buy long!!!')
-            }else if(Number(this.currentPosition)<=0){
-                this.binance.futuresMarketBuy(symbol,amt*2)
-                console.log('Buy long!!!')
+                console.log('Buy long')
+            }else if(Number(this.position.positionAmt)<=0){
+                this.binance.futuresMarketBuy(symbol,Math.abs(this.position.positionAmt)+amt)
+                console.log('Sell short and Buy long')
             }
             return            
         }
@@ -118,12 +122,18 @@ class AutoTrader extends EventEmitter{
         const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=15m&limit=10`)
         const obv15m=this.calculateObv(response.data)
         if (obv15m<0){
+            const quote = await binance.futuresQuote( symbol )
+            const amt=Number(this.asset.walletBalance)/10/Number(quote.bidPrice)
+            if (amt<minimumAmt[symbol]){
+                console.log("not enough margin")
+                return
+            }
             if(Number(this.position.positionAmt)===0){
-                this.binance.futuresMarketBuy(symbol,amt)
+                this.binance.futuresMarketSell(symbol,amt)
                 
                 console.log(`buy the assets! and exiting...obv15m(${obv15m})`)
             }else if(Number(this.position.positionAmt)>=0){
-                this.binance.futuresMarketBuy(symbol,amt*2)
+                this.binance.futuresMarketSell(symbol,Math.abs(this.position.positionAmt)+amt)
             }
             return
         }
