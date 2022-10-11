@@ -37,7 +37,9 @@ class AutoTrader extends EventEmitter{
     async run(){       
         await this.init();        
         this.isRunning=true
-        this.checkObv1d()      
+        //this.checkObv1d()
+        // this.checkObv5m()
+        this.checkObv15m()      
     }
     stop(){
         console.log('stop method gets called.')
@@ -88,24 +90,24 @@ class AutoTrader extends EventEmitter{
         setTimeout(this.checkObv1d.bind(this),interval)
     }        
     async checkObv5m(){        
-        if(this.currentCross!=='up'){
-            console.log('check 5m obv function is ended because current cross is not up')
-            return
-        }        
+        // if(this.currentCross!=='up'){
+        //     console.log('check 5m obv function is ended because current cross is not up')
+        //     return
+        // }        
         const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=5m&limit=10`)
         const obv5m=this.calculateObv(response.data)
         if (obv5m>0){
-            const quote = await binance.futuresQuote( symbol )
+            const quote = await this.binance.futuresQuote( this.symbol )
             const amt=Number(this.asset.walletBalance)/10/Number(quote.askPrice)
-            if (amt<minimumAmt[symbol]){
+            if (amt<this.minimumAmt[this.symbol]){
                 console.log("not enough margin")
                 return
             }
             if(Number(this.position.positionAmt)===0){
-                this.binance.futuresMarketBuy(symbol,amt)
+                this.binance.futuresMarketBuy(this.symbol,amt)
                 console.log('Buy long')
             }else if(Number(this.position.positionAmt)<=0){
-                this.binance.futuresMarketBuy(symbol,Math.abs(this.position.positionAmt)+amt)
+                this.binance.futuresMarketBuy(this.symbol,Math.abs(this.position.positionAmt)+amt)
                 console.log('Sell short and Buy long')
             }
             return            
@@ -115,25 +117,25 @@ class AutoTrader extends EventEmitter{
     }
 
     async checkObv15m(){
-        if(this.currentCross!=='down'){
-            console.log('check 15m obv function is ended because current cross is not down')
-            return
-        }
+        // if(this.currentCross!=='down'){
+        //     console.log('check 15m obv function is ended because current cross is not down')
+        //     return
+        // }
         const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=15m&limit=10`)
         const obv15m=this.calculateObv(response.data)
         if (obv15m<0){
-            const quote = await binance.futuresQuote( symbol )
+            const quote = await this.binance.futuresQuote( this.symbol )
             const amt=Number(this.asset.walletBalance)/10/Number(quote.bidPrice)
-            if (amt<minimumAmt[symbol]){
+            if (amt<this.minimumAmt[this.symbol]){
                 console.log("not enough margin")
                 return
             }
             if(Number(this.position.positionAmt)===0){
-                this.binance.futuresMarketSell(symbol,amt)
+                this.binance.futuresMarketSell(this.symbol,amt)
                 
                 console.log(`buy the assets! and exiting...obv15m(${obv15m})`)
             }else if(Number(this.position.positionAmt)>=0){
-                this.binance.futuresMarketSell(symbol,Math.abs(this.position.positionAmt)+amt)
+                this.binance.futuresMarketSell(this.symbol,Math.abs(this.position.positionAmt)+amt)
             }
             return
         }
@@ -147,7 +149,5 @@ class AutoTrader extends EventEmitter{
 const autoTrader = new AutoTrader('BTCUSDT');
 //Object.assign(autoTrader,EventEmitter.prototype)
 autoTrader.run()
-setTimeout(autoTrader.checkObv15m.bind(autoTrader),25000)
-setTimeout(autoTrader.stop.bind(autoTrader),20000)// need some research about JavaScript Lexical environment.
-setTimeout(autoTrader.run.bind(autoTrader),25000)
-
+// setTimeout(autoTrader.stop.bind(autoTrader),20000)// need some research about JavaScript Lexical environment.
+// setTimeout(autoTrader.run.bind(autoTrader),25000)
