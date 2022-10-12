@@ -95,17 +95,17 @@ class AutoTrader extends EventEmitter{
         const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=5m&limit=10`)
         const obv5m=this.calculateObv(response.data)
         if (obv5m>0){
-            const quote = await binance.futuresQuote( symbol )
+            const quote = await this.binance.futuresQuote( this.symbol )
             const amt=Number(this.asset.walletBalance)/10/Number(quote.askPrice)
-            if (amt<minimumAmt[symbol]){
+            if (amt<this.minimumAmt[this.symbol]){
                 console.log("not enough margin")
                 return
             }
             if(Number(this.position.positionAmt)===0){
-                this.binance.futuresMarketBuy(symbol,amt)
+                this.binance.futuresMarketBuy(this.symbol,amt)
                 console.log('Buy long')
             }else if(Number(this.position.positionAmt)<=0){
-                this.binance.futuresMarketBuy(symbol,Math.abs(this.position.positionAmt)+amt)
+                this.binance.futuresMarketBuy(this.symbol,Math.abs(this.position.positionAmt)+amt)
                 console.log('Sell short and Buy long')
             }
             return            
@@ -122,18 +122,18 @@ class AutoTrader extends EventEmitter{
         const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${this.symbol}&interval=15m&limit=10`)
         const obv15m=this.calculateObv(response.data)
         if (obv15m<0){
-            const quote = await binance.futuresQuote( symbol )
+            const quote = await this.binance.futuresQuote( this.symbol )
             const amt=Number(this.asset.walletBalance)/10/Number(quote.bidPrice)
-            if (amt<minimumAmt[symbol]){
+            if (amt<this.minimumAmt[this.symbol]){
                 console.log("not enough margin")
                 return
             }
             if(Number(this.position.positionAmt)===0){
-                this.binance.futuresMarketSell(symbol,amt)
+                this.binance.futuresMarketSell(this.symbol,amt)
                 
                 console.log(`buy the assets! and exiting...obv15m(${obv15m})`)
             }else if(Number(this.position.positionAmt)>=0){
-                this.binance.futuresMarketSell(symbol,Math.abs(this.position.positionAmt)+amt)
+                this.binance.futuresMarketSell(this.symbol,Math.abs(this.position.positionAmt)+amt)
             }
             return
         }
