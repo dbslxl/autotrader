@@ -3,7 +3,8 @@ const EventEmitter = require('events')
 const Binance = require('node-binance-api')
 const binance=new Binance().options({
     APIKEY:'rQkKYkK7sa286zYyjqvygn8J3O6UXGydLDeRvhOdUUx8G1MMh0TPp5RiRJ9QG7xL',
-    APISECRET:'UyzgLYvAdoTp4CQmc4JITsIQGPxuxMjAPaSroFe4sTUNweYugIW6PlW9to52S9yt'
+    APISECRET:'UyzgLYvAdoTp4CQmc4JITsIQGPxuxMjAPaSroFe4sTUNweYugIW6PlW9to52S9yt',
+   
 })
 
 
@@ -25,6 +26,19 @@ async function init(){
 
 //init()
 
-testObj={a:1,aaa:3,"aaa":5,bbb:[3,5,6,7,2],ff:function(){console.log('this : ',this)}}
-testObj.ff()
-ff()
+// testObj={a:1,aaa:3,"aaa":5,bbb:[3,5,6,7,2],ff:function(){console.log('this : ',this)}}
+// testObj.ff()
+// ff()
+
+function Test(param=3){
+    let Yoyo = this
+    const hi = {hi:'hello'}
+    Yoyo.a=param
+    function testFuncion(){
+        console.log('test')
+    }
+    return hi
+    const testArrowFunction=()=>console.log('test arrow function')
+}
+
+console.log(new Test().__proto__)
