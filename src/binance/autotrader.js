@@ -15,12 +15,12 @@ module.exports = class AutoTrader{
     }
     
     async init(){
-        this.currentCross = await this.getCurrentCross()
+        //this.currentCross = await this.getCurrentCross()
         this.lastObv = await this.getObv()
         this.account=await this.binance.futuresAccount()
         this.position=this.account.positions.find((position)=>position.symbol===this.symbol)
         this.asset=this.account.assets.find((asset)=>asset.asset==='USDT')
-        console.log(`Initial cross : ${this.currentCross}`)        
+        console.log(`Initial Obv : ${this.lastObv}`)        
         console.log('Initial position :', this.position)
         console.log('Initial Asset : ',this.asset)
     }    
@@ -43,19 +43,18 @@ module.exports = class AutoTrader{
         const obv = this.getObv()
         console.log(`Current Obv 1Day is ${obv}`)
         if(obv>0){
-            if(this.lastObv<=0){
-                this.lastObv=obv
+            if(this.lastObv<=0){                
                 this.checkObv5m()
                 console.log('Upcross event fired!')
             }
         }else if(obv<0){
-            if(this.lastObv>=0){
-                this.lastObv=obv
+            if(this.lastObv>=0){                
                 this.checkObv15m()
                 console.log('Downcross event fired!')
             }
         }
         console.log(`interval is ${interval}`)
+        this.lastObv=obv
         setTimeout(this.checkObv1d.bind(this),interval)
     }        
     async checkObv5m(){        
@@ -67,7 +66,7 @@ module.exports = class AutoTrader{
         const obv5m=this.calculateObv(response.data)
         if (obv5m>0){
             const quote = await this.binance.futuresQuote( this.symbol )
-            const amt=Number(this.asset.walletBalance)/10/Number(quote.askPrice)
+            const amt=Number(this.asset.marginBalance)/10/Number(quote.askPrice)
             if (amt<this.minimumAmt[this.symbol]){
                 console.log("not enough margin")
                 return
@@ -93,7 +92,7 @@ module.exports = class AutoTrader{
         const obv15m=this.calculateObv(response.data)
         if (obv15m<0){
             const quote = await this.binance.futuresQuote( this.symbol )
-            const amt=Number(this.asset.walletBalance)/10/Number(quote.bidPrice)
+            const amt=Number(this.asset.marginBalance)/10/Number(quote.bidPrice)
             if (amt<this.minimumAmt[this.symbol]){
                 console.log("not enough margin")
                 return
