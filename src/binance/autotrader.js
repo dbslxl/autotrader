@@ -1,7 +1,8 @@
 const axios = require('axios')
 const EventEmitter = require('events')
 const Binance = require('node-binance-api')
-module.exports = class AutoTrader{
+
+class AutoTrader{
     constructor(symbols) {        
         this.symbols=symbols        
         this.isRunning=false; 
@@ -31,7 +32,7 @@ module.exports = class AutoTrader{
     async run(){       
         //await this.init();        
         this.isRunning=true
-        for (symbol of this.symbols){
+        for (let symbol of this.symbols){
             this.checkObv1d(symbol)    
         }
           
@@ -53,8 +54,8 @@ module.exports = class AutoTrader{
         if(!this.isRunning) return
         let interval=Math.random()*10000
        
-        const obv = this.getObv(symbol)
-        console.log(`Current Obv 1Day is ${obv}`)
+        const obv = await this.getObv(symbol)
+        console.log(`Current Obv for ${symbol} is ${obv}`)
         if(obv>0){
             if(this.obvs[symbol]<=0){                
                 this.checkObv5m(symbol)
@@ -68,7 +69,7 @@ module.exports = class AutoTrader{
         }
         console.log(`interval is ${interval}`)
         this.obvs[symbol] = obv
-        setTimeout(this.checkObv1d.bind(this),interval)
+        setTimeout(this.checkObv1d.bind(this,symbol),interval)
     }        
     async checkObv5m(symbol){        
         if(this.isRunning!=true||this.obvs[symbol]<=0){
