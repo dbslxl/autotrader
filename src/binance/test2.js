@@ -10,14 +10,16 @@ const binance=new Binance().options({
 async function init(){
   
     let account=await binance.futuresAccount()
+    //console.log(account)
     //let position=account.positions.find((position)=>position.symbol==='BTCUSDT')
-    let position=account.positions.find((position)=>position.positionAmt!=0)
+    // let position=account.positions.find((position)=>position.positionAmt!=0)
     
-    let asset=account.assets.find((asset)=>asset.asset==='USDT')
+    // let asset=account.assets.find((asset)=>asset.asset==='USDT')
     
-    console.log('Initial position :', position)
-    console.log('Initial Asset : ',asset)
+    // console.log('Initial position :', position)
+    // console.log('Initial Asset : ',asset)
     //console.log(this)
+    console.log(account.positions.find((position)=>position.symbol="BTCUSDT"))
 }
 
 init()

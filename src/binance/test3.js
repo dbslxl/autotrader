@@ -41,4 +41,37 @@ function Test(param=3){
     const testArrowFunction=()=>console.log('test arrow function')
 }
 
-console.log(new Test().__proto__)
+obj={a:3,
+    b:function(){console.log(this.a)},
+    c:function(){setTimeout(this.b.bind(this),1000) 
+    return 'hi'}
+}
+
+function hey(){
+    this.a=3
+    this.b=7
+}
+//console.log(obj.__proto__)
+
+class NewClass {
+    constructor(){
+        this.a=3
+        this.c=7
+    }
+}
+class ChildClass extends NewClass{
+    constructor(){
+        super()
+        this.v='hi'
+    }
+}
+const ob = new ChildClass()
+
+// console.log(ob.__proto__)
+
+obvs={}
+symbol='BTCUSDT'
+
+obvs[symbol]=300
+
+console.log(obvs)
