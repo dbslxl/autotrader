@@ -9,67 +9,46 @@ class AutoTrader{
 
         this.obvs={}       
         this.minimumAmt={"BTCUSDT":0.001,"ETHUSDT":0.004,"BNBUSDT":0.02,"DOGEUSDT":86}
-        this.investmentRatio=0.1
+        this.investmentRatio=1
         this.binance=new Binance().options({
             APIKEY:'rQkKYkK7sa286zYyjqvygn8J3O6UXGydLDeRvhOdUUx8G1MMh0TPp5RiRJ9QG7xL',
             APISECRET:'UyzgLYvAdoTp4CQmc4JITsIQGPxuxMjAPaSroFe4sTUNweYugIW6PlW9to52S9yt'
         })
-        //setTimeout(()=>{this.emit('upcross')},10000) //It doesn't work if not using arrow function     
     }
     
-    // async init(){
-    //     //this.currentCross = await this.getCurrentCross()
-    //     //this.Obvs = await this.getObv()
-
-    //     this.account=await this.binance.futuresAccount()
-    //     this.position=this.account.positions.find((position)=>position.symbol===this.symbol)
-    //     this.asset=this.account.assets.find((asset)=>asset.asset==='USDT')
-        
-    //     console.log(`Initial Obv : ${this.lastObv}`)        
-    //     console.log('Initial position :', this.position)
-    //     console.log('Initial Asset : ',this.asset)
-    // }    
-    async run(){       
-        //await this.init();        
+    async run(){              
         this.isRunning=true
         for (let symbol of this.symbols){
             this.checkObv1d(symbol)    
-        }
-          
+        }          
     }
     stop(){
         console.log('stop method gets called.')
-        this.isRunning=false
-        // this.currentCross=''
-        // this.currentPosition=''
+        this.isRunning=false       
     }
-    // setLeverage(leverage){
-    //     this.leverage=leverage
-    // }
     setInvestmentPercentage(ratio){
         this.investmentRatio=ratio
     }
     
     async checkObv1d(symbol){
         if(!this.isRunning) return
-        let interval=Math.random()*10000
+        //let interval=Math.random()*10000
        
         const obv = await this.getObv(symbol)
         console.log(`Current Obv for ${symbol} is ${obv}`)
+        console.log(this.obvs)
         if(obv>0){
             if(this.obvs[symbol]<=0){                
-                this.checkObv5m(symbol)
-                console.log('Upcross event fired!')
+                this.checkObv5m(symbol)                
             }
         }else if(obv<0){
             if(this.obvs[symbol]>=0){                
-                this.checkObv15m(symbol)
-                console.log('Downcross event fired!')
+                this.checkObv15m(symbol)                
             }
         }
-        console.log(`interval is ${interval}`)
+        //console.log(`interval is ${interval}`)
         this.obvs[symbol] = obv
-        setTimeout(this.checkObv1d.bind(this,symbol),interval)
+        setTimeout(this.checkObv1d.bind(this,symbol),60000)
     }        
     async checkObv5m(symbol){        
         if(this.isRunning!=true||this.obvs[symbol]<=0){
@@ -83,7 +62,8 @@ class AutoTrader{
             const account = await this.binance.futuresAccount()
             const asset = account.assets.find((asset)=>asset.asset=='USDT')
             const position = account.positions.find((position)=>position.symbol==symbol)
-            const amt=Number(this.asset.marginBalance)/this.investmentRatio/Number(quote.askPrice)
+            let amt=Number(this.asset.marginBalance)/this.investmentRatio/Number(quote.askPrice)
+            amt=Math.floor(amt*1000)/1000
             if (amt<this.minimumAmt[symbol]){
                 console.log("not enough margin")
                 return
@@ -98,7 +78,7 @@ class AutoTrader{
             return            
         }
         console.log(`--5m obv is not up(${obv5m}) so looping again...`)
-        setTimeout(this.checkObv5m.bind(this),1000)        
+        setTimeout(this.checkObv5m.bind(this,symbol),1000)        
     }    
     async checkObv15m(symbol){
         if(this.isRunning!=true||this.obvs[symbol]>=0){
@@ -112,22 +92,24 @@ class AutoTrader{
             const account = await this.binance.futuresAccount()
             const asset = account.assets.find((asset)=>asset.asset=='USDT')
             const position = account.positions.find((position)=>position.symbol==symbol)
-            const amt=Number(asset.marginBalance)/this.investmentRatio/Number(quote.bidPrice)
+            let amt=Number(asset.marginBalance)/this.investmentRatio/Number(quote.bidPrice)
+            amt=Math.floor(amt*1000)/1000
+            console.log(symbol,amt)
             if (amt<this.minimumAmt[symbol]){
                 console.log("not enough margin")
                 return
             }
             if(Number(position.positionAmt)===0){
-                await this.binance.futuresMarketSell(symbol,amt)
-                
-                console.log(`buy the assets! and exiting...obv15m(${obv15m})`)
+                await this.binance.futuresMarketSell(symbol,amt)                
+                console.log(`buy the assets. and exiting...obv15m(${obv15m})`)
             }else if(Number(position.positionAmt)>=0){
                 await this.binance.futuresMarketSell(symbol,Math.abs(position.positionAmt)+amt)
+                console.log(`buy the assets 2times! and exiting...obv15m(${obv15m})`)
             }
             return
         }
         console.log(`--15m obv is not down(${obv15m}) so looping again...`)
-        setTimeout(this.checkObv15m.bind(this),1000)     
+        setTimeout(this.checkObv15m.bind(this,symbol),1000)     
     }
     
     async getObv(symbol){
@@ -148,8 +130,8 @@ class AutoTrader{
     }
 }
 
-const autoTrader = new AutoTrader(['BTCUSDT','ETHUSDT']);
+const autoTrader = new AutoTrader(['BTCUSDT','ETHUSDT','BNBUSDT','DOGEUSDT']);
 autoTrader.run()
 
-setTimeout(autoTrader.stop.bind(autoTrader),20000)
-setTimeout(autoTrader.run.bind(autoTrader),25000)
+//setTimeout(autoTrader.checkObv15m.bind(autoTrader,'ETHUSDT'),10000)
+// setTimeout(autoTrader.run.bind(autoTrader),25000)

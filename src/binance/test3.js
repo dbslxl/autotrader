@@ -75,3 +75,11 @@ symbol='BTCUSDT'
 obvs[symbol]=300
 
 console.log(obvs)
+
+function tt (symbol){
+    if (obvs[symbol] > 100){
+        console.log('test succeeded')
+    }
+}
+
+console.log(tt('ETHUSDT'))
