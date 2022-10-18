@@ -52,7 +52,7 @@ class AutoTrader{
         setTimeout(this.checkObv1d.bind(this,symbol),60000)
     }        
     async checkObv5m(symbol){        
-        if(this.isRunning!=true||this.obvs[symbol]<=0){
+        if(this.isRunning!=true||!this.obvs[symbol]||this.obvs[symbol]<=0){
             console.log('check 5m obv function is ended because current cross is not up')
             return
         }        
@@ -83,7 +83,7 @@ class AutoTrader{
         setTimeout(this.checkObv5m.bind(this,symbol),1000)        
     }    
     async checkObv15m(symbol){
-        if(this.isRunning!=true||this.obvs[symbol]>=0){
+        if(this.isRunning!=true||!this.obvs[symbol]||this.obvs[symbol]>=0){
             console.log('check 15m obv function is ended because current cross is not down')
             return
         }
@@ -137,5 +137,5 @@ class AutoTrader{
 const autoTrader = new AutoTrader(['ETHUSDT']);
 autoTrader.run()
 
-setTimeout(autoTrader.checkObv15m.bind(autoTrader,'BNBUSDT'),5000)
+setTimeout(autoTrader.checkObv15m.bind(autoTrader,'ETHUSDT'),5000)
 // setTimeout(autoTrader.run.bind(autoTrader),25000)
