@@ -9,6 +9,7 @@ class AutoTrader{
 
         this.obvs={}       
         this.minimumAmt={"BTCUSDT":0.001,"ETHUSDT":0.004,"BNBUSDT":0.02,"DOGEUSDT":86}
+        this.precision={"BTCUSDT":3, "ETHUSDT":3, "BNBUSDT":2, "DOGEUSDT":0}
         this.investmentRatio=1
         this.binance=new Binance().options({
             APIKEY:'rQkKYkK7sa286zYyjqvygn8J3O6UXGydLDeRvhOdUUx8G1MMh0TPp5RiRJ9QG7xL',
@@ -62,8 +63,9 @@ class AutoTrader{
             const account = await this.binance.futuresAccount()
             const asset = account.assets.find((asset)=>asset.asset=='USDT')
             const position = account.positions.find((position)=>position.symbol==symbol)
-            let amt=Number(this.asset.marginBalance)/this.investmentRatio/Number(quote.askPrice)
-            amt=Math.floor(amt*1000)/1000
+            let amt=Number(asset.marginBalance)*this.investmentRatio/Number(quote.askPrice)
+            amt=Math.floor(amt*Math.pow(10,this.precision[symbol]))/Math.pow(10,this.precision[symbol])
+            amt=amt.toFixed(this.precision[symbol])
             if (amt<this.minimumAmt[symbol]){
                 console.log("not enough margin")
                 return
@@ -86,14 +88,15 @@ class AutoTrader{
             return
         }
         const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=15m&limit=10`)
-        const obv15m=this.calculateObv(response.data)
+        const obv15m=this.calculateObv(response.data)        
         if (obv15m<0){
             const quote = await this.binance.futuresQuote( symbol )
             const account = await this.binance.futuresAccount()
             const asset = account.assets.find((asset)=>asset.asset=='USDT')
             const position = account.positions.find((position)=>position.symbol==symbol)
-            let amt=Number(asset.marginBalance)/this.investmentRatio/Number(quote.bidPrice)
-            amt=Math.floor(amt*1000)/1000
+            let amt=Number(asset.marginBalance)*this.investmentRatio/Number(quote.bidPrice)
+            amt=Math.floor(amt*Math.pow(10,this.precision[symbol]))/Math.pow(10,this.precision[symbol])
+            amt=amt.toFixed(this.precision[symbol])
             console.log(symbol,amt)
             if (amt<this.minimumAmt[symbol]){
                 console.log("not enough margin")
@@ -130,8 +133,9 @@ class AutoTrader{
     }
 }
 
-const autoTrader = new AutoTrader(['BTCUSDT','ETHUSDT','BNBUSDT','DOGEUSDT']);
+//const autoTrader = new AutoTrader(['BTCUSDT','ETHUSDT','BNBUSDT','DOGEUSDT']);
+const autoTrader = new AutoTrader(['ETHUSDT']);
 autoTrader.run()
 
-//setTimeout(autoTrader.checkObv15m.bind(autoTrader,'ETHUSDT'),10000)
+setTimeout(autoTrader.checkObv15m.bind(autoTrader,'BNBUSDT'),5000)
 // setTimeout(autoTrader.run.bind(autoTrader),25000)
