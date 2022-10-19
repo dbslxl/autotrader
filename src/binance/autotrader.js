@@ -10,10 +10,14 @@ class AutoTrader{
         this.obvs={}       
         this.minimumAmt={"BTCUSDT":0.001,"ETHUSDT":0.004,"BNBUSDT":0.02,"DOGEUSDT":86}
         this.precision={"BTCUSDT":3, "ETHUSDT":3, "BNBUSDT":2, "DOGEUSDT":0}
-        this.investmentRatio=1
+        this.investmentRatio=0.1
+        // this.binance=new Binance().options({
+        //     APIKEY:'rQkKYkK7sa286zYyjqvygn8J3O6UXGydLDeRvhOdUUx8G1MMh0TPp5RiRJ9QG7xL',
+        //     APISECRET:'UyzgLYvAdoTp4CQmc4JITsIQGPxuxMjAPaSroFe4sTUNweYugIW6PlW9to52S9yt'
+        // })
         this.binance=new Binance().options({
-            APIKEY:'rQkKYkK7sa286zYyjqvygn8J3O6UXGydLDeRvhOdUUx8G1MMh0TPp5RiRJ9QG7xL',
-            APISECRET:'UyzgLYvAdoTp4CQmc4JITsIQGPxuxMjAPaSroFe4sTUNweYugIW6PlW9to52S9yt'
+            APIKEY:'A4nOHmYpEL9T73QKVGcr5ZKE2WiOtzdHZ9G2iCWaDGVMvXTbfeyrYIJeyltn8SSc',
+            APISECRET:'SuT2cu12uIhjB9mCeGj3D4TGM2EeiN8tNAKDxCXWswHz3T2SFZimK5bgUGLFyVmS'
         })
     }
     
@@ -29,6 +33,11 @@ class AutoTrader{
     }
     setInvestmentPercentage(ratio){
         this.investmentRatio=ratio
+    }
+    async setFutresLeverage(levarage){
+        for (symbol of this.symbols){
+            console.log(await this.binance.futuresLeverage(symbol,leverage))
+        }
     }
     
     async checkObv1d(symbol){
@@ -134,8 +143,8 @@ class AutoTrader{
 }
 
 //const autoTrader = new AutoTrader(['BTCUSDT','ETHUSDT','BNBUSDT','DOGEUSDT']);
-const autoTrader = new AutoTrader(['ETHUSDT']);
+const autoTrader = new AutoTrader(['BTCUSDT','ETHUSDT','BNBUSDT','DOGEUSDT']);
 autoTrader.run()
 
-setTimeout(autoTrader.checkObv15m.bind(autoTrader,'ETHUSDT'),5000)
+//setTimeout(autoTrader.checkObv15m.bind(autoTrader,'ETHUSDT'),5000)
 // setTimeout(autoTrader.run.bind(autoTrader),25000)
