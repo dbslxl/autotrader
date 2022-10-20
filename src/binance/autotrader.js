@@ -24,7 +24,8 @@ class AutoTrader{
     async run(){              
         this.isRunning=true
         for (let symbol of this.symbols){
-            this.checkObv1d(symbol)    
+            this.checkObv1d(symbol)
+            //await this.sleep(1000)    
         }          
     }
     stop(){
@@ -43,89 +44,101 @@ class AutoTrader{
     async checkObv1d(symbol){
         if(!this.isRunning) return
         //let interval=Math.random()*10000
-       
-        const obv = await this.getObv(symbol)
-        console.log(`Current Obv for ${symbol} is ${obv}`)
-        console.log(this.obvs)
-        if(obv>0){
-            if(this.obvs[symbol]<=0){                
-                this.checkObv5m(symbol)                
+        try{
+            const obv = await this.getObv(symbol)
+            console.log(`Current Obv for ${symbol} is ${obv}`)
+            console.log(this.obvs)
+            if(obv>0){
+                if(this.obvs[symbol]<=0){                
+                    this.checkObv5m(symbol)                
+                }
+            }else if(obv<0){
+                if(this.obvs[symbol]>=0){                
+                    this.checkObv15m(symbol)                
+                }
             }
-        }else if(obv<0){
-            if(this.obvs[symbol]>=0){                
-                this.checkObv15m(symbol)                
-            }
-        }
-        //console.log(`interval is ${interval}`)
-        this.obvs[symbol] = obv
+            //console.log(`interval is ${interval}`)
+            this.obvs[symbol] = obv
+            
+        }catch(e){
+            console.error(e)
+        }       
         setTimeout(this.checkObv1d.bind(this,symbol),60000)
     }        
     async checkObv5m(symbol){        
         if(this.isRunning!=true||!this.obvs[symbol]||this.obvs[symbol]<=0){
             console.log('check 5m obv function is ended because current cross is not up')
             return
-        }        
-        const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=5m&limit=10`)
-        const obv5m=this.calculateObv(response.data)
-        if (obv5m>0){
-            const quote = await this.binance.futuresQuote( symbol )
-            const account = await this.binance.futuresAccount()
-            const asset = account.assets.find((asset)=>asset.asset=='USDT')
-            const position = account.positions.find((position)=>position.symbol==symbol)
-            let amt=Number(asset.marginBalance)*this.investmentRatio/Number(quote.askPrice)
-            amt=Math.floor(amt*Math.pow(10,this.precision[symbol]))/Math.pow(10,this.precision[symbol])
-            amt=amt.toFixed(this.precision[symbol])
-            if (amt<this.minimumAmt[symbol]){
-                console.log("not enough margin")
-                return
-            }
-            if(Number(position.positionAmt)===0){
-                await this.binance.futuresMarketBuy(symbol,amt)
-                console.log('Buy long')
-            }else if(Number(position.positionAmt)<=0){
-                await this.binance.futuresMarketBuy(symbol,Math.abs(position.positionAmt)+amt)
-                console.log('Sell short and Buy long')
-            }
-            return            
         }
-        console.log(`--5m obv is not up(${obv5m}) so looping again...`)
-        setTimeout(this.checkObv5m.bind(this,symbol),1000)        
+        try{
+            const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=5m&limit=10`)
+            const obv5m=this.calculateObv(response.data)
+            if (obv5m>0){
+                const quote = await this.binance.futuresQuote( symbol )
+                const account = await this.binance.futuresAccount()
+                const asset = account.assets.find((asset)=>asset.asset=='USDT')
+                const position = account.positions.find((position)=>position.symbol==symbol)
+                let amt=Number(asset.marginBalance)*this.investmentRatio/Number(quote.askPrice)
+                amt=Math.floor(amt*Math.pow(10,this.precision[symbol]))/Math.pow(10,this.precision[symbol])
+                amt=amt.toFixed(this.precision[symbol])
+                if (amt<this.minimumAmt[symbol]){
+                    console.log("not enough margin")
+                    return
+                }
+                if(Number(position.positionAmt)===0){
+                    await this.binance.futuresMarketBuy(symbol,amt)
+                    console.log('Buy long')
+                }else if(Number(position.positionAmt)<=0){
+                    await this.binance.futuresMarketBuy(symbol,Math.abs(position.positionAmt)+amt)
+                    console.log('Sell short and Buy long')
+                }
+                return            
+            }
+            console.log(`--5m obv is not up(${obv5m}) so looping again...`)            
+        }catch(e){
+            console.error(e)
+        }        
+        setTimeout(this.checkObv5m.bind(this,symbol),5000)        
     }    
     async checkObv15m(symbol){
         if(this.isRunning!=true||!this.obvs[symbol]||this.obvs[symbol]>=0){
             console.log('check 15m obv function is ended because current cross is not down')
             return
         }
-        const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=15m&limit=10`)
-        const obv15m=this.calculateObv(response.data)        
-        if (obv15m<0){
-            const quote = await this.binance.futuresQuote( symbol )
-            const account = await this.binance.futuresAccount()
-            const asset = account.assets.find((asset)=>asset.asset=='USDT')
-            const position = account.positions.find((position)=>position.symbol==symbol)
-            let amt=Number(asset.marginBalance)*this.investmentRatio/Number(quote.bidPrice)
-            amt=Math.floor(amt*Math.pow(10,this.precision[symbol]))/Math.pow(10,this.precision[symbol])
-            amt=amt.toFixed(this.precision[symbol])
-            console.log(symbol,amt)
-            if (amt<this.minimumAmt[symbol]){
-                console.log("not enough margin")
+        try{
+            const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=15m&limit=10`)
+            const obv15m=this.calculateObv(response.data)        
+            if (obv15m<0){
+                const quote = await this.binance.futuresQuote( symbol )
+                const account = await this.binance.futuresAccount()
+                const asset = account.assets.find((asset)=>asset.asset=='USDT')
+                const position = account.positions.find((position)=>position.symbol==symbol)
+                let amt=Number(asset.marginBalance)*this.investmentRatio/Number(quote.bidPrice)
+                amt=Math.floor(amt*Math.pow(10,this.precision[symbol]))/Math.pow(10,this.precision[symbol])
+                amt=amt.toFixed(this.precision[symbol])
+                console.log(symbol,amt)
+                if (amt<this.minimumAmt[symbol]){
+                    console.log("not enough margin")
+                    return
+                }
+                if(Number(position.positionAmt)===0){
+                    await this.binance.futuresMarketSell(symbol,amt)                
+                    console.log(`buy the assets. and exiting...obv15m(${obv15m})`)
+                }else if(Number(position.positionAmt)>=0){
+                    await this.binance.futuresMarketSell(symbol,Math.abs(position.positionAmt)+amt)
+                    console.log(`buy the assets 2times! and exiting...obv15m(${obv15m})`)
+                }
                 return
             }
-            if(Number(position.positionAmt)===0){
-                await this.binance.futuresMarketSell(symbol,amt)                
-                console.log(`buy the assets. and exiting...obv15m(${obv15m})`)
-            }else if(Number(position.positionAmt)>=0){
-                await this.binance.futuresMarketSell(symbol,Math.abs(position.positionAmt)+amt)
-                console.log(`buy the assets 2times! and exiting...obv15m(${obv15m})`)
-            }
-            return
+            console.log(`--15m obv is not down(${obv15m}) so looping again...`)
+        }catch(e){
+            console.error(e)
         }
-        console.log(`--15m obv is not down(${obv15m}) so looping again...`)
-        setTimeout(this.checkObv15m.bind(this,symbol),1000)     
+        setTimeout(this.checkObv15m.bind(this,symbol),5000)     
     }
     
     async getObv(symbol){
-        const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1d&limit=10`)
+        const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=8h&limit=10`)
         const obv = this.calculateObv(response.data)
         return obv
     }
@@ -139,6 +152,10 @@ class AutoTrader{
             }
         })
         return obv
+    }
+    async sleep(ms){
+        const wakeupTime = Date.now() + ms;
+        while(Date.now()<wakeupTime){}
     }
 }
 
