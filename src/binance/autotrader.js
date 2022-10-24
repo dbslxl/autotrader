@@ -10,15 +10,15 @@ class AutoTrader{
         this.obvs={}       
         this.minimumAmt={"BTCUSDT":0.001,"ETHUSDT":0.004,"BNBUSDT":0.02,"DOGEUSDT":86}
         this.precision={"BTCUSDT":3, "ETHUSDT":3, "BNBUSDT":2, "DOGEUSDT":0}
-        this.investmentRatio=0.1
-        // this.binance=new Binance().options({
-        //     APIKEY:'rQkKYkK7sa286zYyjqvygn8J3O6UXGydLDeRvhOdUUx8G1MMh0TPp5RiRJ9QG7xL',
-        //     APISECRET:'UyzgLYvAdoTp4CQmc4JITsIQGPxuxMjAPaSroFe4sTUNweYugIW6PlW9to52S9yt'
-        // })
+        this.investmentRatio=1
         this.binance=new Binance().options({
-            APIKEY:'A4nOHmYpEL9T73QKVGcr5ZKE2WiOtzdHZ9G2iCWaDGVMvXTbfeyrYIJeyltn8SSc',
-            APISECRET:'SuT2cu12uIhjB9mCeGj3D4TGM2EeiN8tNAKDxCXWswHz3T2SFZimK5bgUGLFyVmS'
+            APIKEY:'rQkKYkK7sa286zYyjqvygn8J3O6UXGydLDeRvhOdUUx8G1MMh0TPp5RiRJ9QG7xL',
+            APISECRET:'UyzgLYvAdoTp4CQmc4JITsIQGPxuxMjAPaSroFe4sTUNweYugIW6PlW9to52S9yt'
         })
+        // this.binance=new Binance().options({
+        //     APIKEY:'A4nOHmYpEL9T73QKVGcr5ZKE2WiOtzdHZ9G2iCWaDGVMvXTbfeyrYIJeyltn8SSc',
+        //     APISECRET:'SuT2cu12uIhjB9mCeGj3D4TGM2EeiN8tNAKDxCXWswHz3T2SFZimK5bgUGLFyVmS'
+        // })
     }
     
     async run(){              
@@ -50,11 +50,12 @@ class AutoTrader{
             console.log(this.obvs)
             if(obv>0){
                 if(this.obvs[symbol]<=0){                
-                    this.checkObv5m(symbol)                
+                    this.checkObv5m(symbol).bind(this)
+
                 }
             }else if(obv<0){
                 if(this.obvs[symbol]>=0){                
-                    this.checkObv15m(symbol)                
+                    this.checkObv15m(symbol).bind(this)                
                 }
             }
             //console.log(`interval is ${interval}`)
@@ -67,7 +68,7 @@ class AutoTrader{
     }        
     async checkObv5m(symbol){        
         if(this.isRunning!=true||!this.obvs[symbol]||this.obvs[symbol]<=0){
-            console.log('check 5m obv function is ended because current cross is not up')
+            console.log('check 5m obv function ended because current cross is not up')
             return
         }
         try{
@@ -81,16 +82,22 @@ class AutoTrader{
                 let amt=Number(asset.marginBalance)*this.investmentRatio/Number(quote.askPrice)
                 amt=Math.floor(amt*Math.pow(10,this.precision[symbol]))/Math.pow(10,this.precision[symbol])
                 amt=amt.toFixed(this.precision[symbol])
+                let positionAmt=Number(position.positionAmt)
                 if (amt<this.minimumAmt[symbol]){
                     console.log("not enough margin")
                     return
                 }
-                if(Number(position.positionAmt)===0){
-                    await this.binance.futuresMarketBuy(symbol,amt)
-                    console.log('Buy long')
-                }else if(Number(position.positionAmt)<=0){
-                    await this.binance.futuresMarketBuy(symbol,Math.abs(position.positionAmt)+amt)
-                    console.log('Sell short and Buy long')
+                if(positionAmt==0){
+                    console.log('Buy long',symbol,amt)
+                    console.log(await this.binance.futuresMarketBuy(symbol,amt))
+                }else if(positionAmt<0){
+                    amt=Math.abs(positionAmt)+Number(amt)
+                    console.log('Sell short and Buy long',symbol,amt)
+                    console.log(await this.binance.futuresMarketBuy(symbol,amt))
+                }else if(positionAmt>0){
+                    amt=amt-Math.abs(positionAmt)
+                    console.log(symbol,amt)
+                    console.log(await this.binance.futuresMarketBuy(symbol,amt))
                 }
                 return            
             }
@@ -102,7 +109,7 @@ class AutoTrader{
     }    
     async checkObv15m(symbol){
         if(this.isRunning!=true||!this.obvs[symbol]||this.obvs[symbol]>=0){
-            console.log('check 15m obv function is ended because current cross is not down')
+            console.log('check 15m obv function ended because current cross is not down')
             return
         }
         try{
@@ -114,6 +121,7 @@ class AutoTrader{
                 const asset = account.assets.find((asset)=>asset.asset=='USDT')
                 const position = account.positions.find((position)=>position.symbol==symbol)
                 let amt=Number(asset.marginBalance)*this.investmentRatio/Number(quote.bidPrice)
+                let positionAmt=Number(position.positionAmt)
                 amt=Math.floor(amt*Math.pow(10,this.precision[symbol]))/Math.pow(10,this.precision[symbol])
                 amt=amt.toFixed(this.precision[symbol])
                 console.log(symbol,amt)
@@ -121,12 +129,17 @@ class AutoTrader{
                     console.log("not enough margin")
                     return
                 }
-                if(Number(position.positionAmt)===0){
-                    await this.binance.futuresMarketSell(symbol,amt)                
-                    console.log(`buy the assets. and exiting...obv15m(${obv15m})`)
-                }else if(Number(position.positionAmt)>=0){
-                    await this.binance.futuresMarketSell(symbol,Math.abs(position.positionAmt)+amt)
-                    console.log(`buy the assets 2times! and exiting...obv15m(${obv15m})`)
+                if(positionAmt==0){
+                    console.log(await this.binance.futuresMarketSell(symbol,amt))                
+                    console.log(`buy short. and exiting...obv15m(${obv15m})`,symbol,amt)
+                }else if(positionAmt>0){
+                    amt=Math.abs(position.positionAmt)+amt
+                    console.log(`sell long and buy short and exiting...obv15m(${obv15m})`,symbol,amt)
+                    console.log(await this.binance.futuresMarketSell(symbol,amt))
+                }else if(positionAmt<0){
+                    amt=amt-Math.abs(positionAmt)
+                    console.log(symbol,amt)
+                    console.log(await this.binance.futuresMarketSell(symbol,amt))
                 }
                 return
             }
@@ -162,6 +175,3 @@ class AutoTrader{
 //const autoTrader = new AutoTrader(['BTCUSDT','ETHUSDT','BNBUSDT','DOGEUSDT']);
 const autoTrader = new AutoTrader(['BTCUSDT','ETHUSDT','BNBUSDT','DOGEUSDT']);
 autoTrader.run()
-
-//setTimeout(autoTrader.checkObv15m.bind(autoTrader,'ETHUSDT'),5000)
-// setTimeout(autoTrader.run.bind(autoTrader),25000)
