@@ -43,24 +43,20 @@ class AutoTrader{
     
     async checkObv1d(symbol){
         if(!this.isRunning) return
-        //let interval=Math.random()*10000
         try{
             const obv = await this.getObv(symbol)
             console.log(`Current Obv for ${symbol} is ${obv}`)
             console.log(this.obvs)
             if(obv>0){
                 if(this.obvs[symbol]<=0){                
-                    this.checkObv5m(symbol).bind(this)
-
+                    this.checkObv5m.bind(this,symbol)
                 }
             }else if(obv<0){
                 if(this.obvs[symbol]>=0){                
-                    this.checkObv15m(symbol).bind(this)                
+                    this.checkObv15m.bind(this,symbol)            
                 }
             }
-            //console.log(`interval is ${interval}`)
-            this.obvs[symbol] = obv
-            
+            this.obvs[symbol] = obv            
         }catch(e){
             console.error(e)
         }       
