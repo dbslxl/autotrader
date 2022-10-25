@@ -48,14 +48,16 @@ class AutoTrader{
             console.log(`Current Obv for ${symbol} is ${obv}`)
             console.log(this.obvs)
             if(obv>0){
-                if(this.obvs[symbol]<=0){                
-                    this.checkObv5m(symbol)
+                if(this.obvs[symbol]<=0){
+                    this.obvs[symbol] = obv                 
                     console.log('upcross')
+                    this.checkObv5m(symbol)
                 }
             }else if(obv<0){
-                if(this.obvs[symbol]>=0){                
-                    this.checkObv15m(symbol)
+                if(this.obvs[symbol]>=0){
+                    this.obvs[symbol] = obv                 
                     console.log('downcross')            
+                    this.checkObv15m(symbol)
                 }
             }
             this.obvs[symbol] = obv            
@@ -99,7 +101,7 @@ class AutoTrader{
                 }
                 return            
             }
-            console.log(`--5m obv is not up(${obv5m}) so looping again...`)            
+            console.log(`--5m obv of ${symbol} is not up(${obv5m}) so checking again...`)            
         }catch(e){
             console.error(e)
         }        
@@ -141,7 +143,7 @@ class AutoTrader{
                 }
                 return
             }
-            console.log(`--15m obv is not down(${obv15m}) so looping again...`)
+            console.log(`--15m obv ${symbol} is not down(${obv15m}) so checking again...`)
         }catch(e){
             console.error(e)
         }
