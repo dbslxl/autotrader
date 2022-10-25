@@ -52,7 +52,7 @@ async function init(){
     // console.log(symbol,amt)
     // amt=Math.abs(positionAmt)+Number(amt)
     // console.log('Sell short and Buy long',symbol,amt)
-    console.log(binance.futuresMarketSell('DOGEUSDT',429))
+    //console.log(binance.futuresMarketSell('DOGEUSDT',429))
 }
 
 init()

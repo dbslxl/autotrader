@@ -49,11 +49,13 @@ class AutoTrader{
             console.log(this.obvs)
             if(obv>0){
                 if(this.obvs[symbol]<=0){                
-                    this.checkObv5m.bind(this,symbol)
+                    this.checkObv5m(symbol)
+                    console.log('upcross')
                 }
             }else if(obv<0){
                 if(this.obvs[symbol]>=0){                
-                    this.checkObv15m.bind(this,symbol)            
+                    this.checkObv15m(symbol)
+                    console.log('downcross')            
                 }
             }
             this.obvs[symbol] = obv            
