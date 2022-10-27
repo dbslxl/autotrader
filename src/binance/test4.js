@@ -1,26 +1,21 @@
+const client = require('../db')
 
+async function run(){
+    try{
+        await client.connect()
+        const database = client.db('sample_mflix')
+        const users = database.collection('users')        
+        const stream = users.watch()
+        stream.on('change',next=>{console.log('something has changed.',next)})
+        
+        userList=await users.find({name:'kim'}).toArray()
+        console.log(userList)
 
-class Test{
-    constructor(){
-        this.name='kim'
-        this.age=30
+    }catch(e){
+        console.dir(e)
+    }finally{
+        // await client.close()
     }
-    run(){
-        this.printThis()
-        // this.printThis.bind(this)()
-        setTimeout(this.changeName.bind(this),5000)
-    }
-    printThis(){
-        //console.log('this : ',this)
-        console.log('this name : ',this.name)
-        console.log('this age : ',this.age)
-        setTimeout(this.printThis.bind(this),1000)
-    }
-    changeName(){
-        this.name='park'
-    }
-
 }
 
-const test = new Test()
-test.run()
+run()
