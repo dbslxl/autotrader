@@ -1,5 +1,5 @@
 const axios = require('axios')
-const EventEmitter = require('events')
+const mysql = require('mysql2')
 const Binance = require('node-binance-api')
 
 class AutoTrader{
@@ -19,6 +19,12 @@ class AutoTrader{
             APIKEY:'A4nOHmYpEL9T73QKVGcr5ZKE2WiOtzdHZ9G2iCWaDGVMvXTbfeyrYIJeyltn8SSc',
             APISECRET:'SuT2cu12uIhjB9mCeGj3D4TGM2EeiN8tNAKDxCXWswHz3T2SFZimK5bgUGLFyVmS'
         })
+        this.connection = mysql.createConnection({
+            host     : '192.168.219.104',
+            user     : 'root',
+            password : 'YoYohub0410!@',
+            database : 'yovkr_app' 
+        });
     }
     
     async run(){              
@@ -51,12 +57,14 @@ class AutoTrader{
                 if(this.obvs[symbol]<=0){
                     this.obvs[symbol] = obv                 
                     console.log('upcross')
+                    this.connection.query(`insert into node_trader_log (logtype,log_content) values ('cross','${symbol} upcross')`);
                     this.checkObv5m(symbol)
                 }
             }else if(obv<0){
                 if(this.obvs[symbol]>=0){
                     this.obvs[symbol] = obv                 
-                    console.log('downcross')            
+                    console.log('downcross')
+                    this.connection.query(`insert into node_trader_log (logtype,log_content) values ('cross','${symbol} downcross')`);            
                     this.checkObv15m(symbol)
                 }
             }
@@ -89,15 +97,18 @@ class AutoTrader{
                 }
                 if(positionAmt==0){
                     console.log('Buy long',symbol,amt)
-                    console.log(await this.binance.futuresMarketBuy(symbol,amt))
+                    let result = await this.binance.futuresMarketBuy(symbol,amt)
+                    this.connection.query(`insert into node_trader_log (logtype,log_content) values ('result','${symbol} ${amont} ${result}')`);  
                 }else if(positionAmt<0){
                     amt=Math.abs(positionAmt)+Number(amt)
                     console.log('Sell short and Buy long',symbol,amt)
-                    console.log(await this.binance.futuresMarketBuy(symbol,amt))
+                    let result = await this.binance.futuresMarketBuy(symbol,amt)
+                    this.connection.query(`insert into node_trader_log (logtype,log_content) values ('result','${symbol} ${amont} ${result}')`);
                 }else if(positionAmt>0){
                     amt=amt-Math.abs(positionAmt)
                     console.log(symbol,amt)
-                    console.log(await this.binance.futuresMarketBuy(symbol,amt))
+                    let result = await this.binance.futuresMarketBuy(symbol,amt)
+                    this.connection.query(`insert into node_trader_log (logtype,log_content) values ('result','${symbol} ${amont} ${result}')`);
                 }
                 return            
             }
@@ -130,16 +141,17 @@ class AutoTrader{
                     return
                 }
                 if(positionAmt==0){
-                    console.log(await this.binance.futuresMarketSell(symbol,amt))                
                     console.log(`buy short. and exiting...obv15m(${obv15m})`,symbol,amt)
+                    let result = await this.binance.futuresMarketSell(symbol,amt)
+                    this.connection.query(`insert into node_trader_log (logtype,log_content) values ('result','${symbol} ${amont} ${result}')`);                
                 }else if(positionAmt>0){
                     amt=Math.abs(position.positionAmt)+amt
-                    console.log(`sell long and buy short and exiting...obv15m(${obv15m})`,symbol,amt)
-                    console.log(await this.binance.futuresMarketSell(symbol,amt))
+                    let result = await this.binance.futuresMarketSell(symbol,amt)
+                    this.connection.query(`insert into node_trader_log (logtype,log_content) values ('result','${symbol} ${amont} ${result}')`);   
                 }else if(positionAmt<0){
                     amt=amt-Math.abs(positionAmt)
-                    console.log(symbol,amt)
-                    console.log(await this.binance.futuresMarketSell(symbol,amt))
+                    let result = await this.binance.futuresMarketSell(symbol,amt)
+                    this.connection.query(`insert into node_trader_log (logtype,log_content) values ('result','${symbol} ${amont} ${result}')`);   
                 }
                 return
             }

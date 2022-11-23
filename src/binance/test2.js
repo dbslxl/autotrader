@@ -7,7 +7,7 @@ const Binance = require('node-binance-api')
 //     APISECRET:'DdRzV1XKoZAPlzpjALQzjNlh8uuYuoFqr6OAsK8jIqF9NmCAk7iEIJvRItOHx3E7'
 // })
 
-// // 실장님
+// 실장님
 const binance=new Binance().options({
     APIKEY:'A4nOHmYpEL9T73QKVGcr5ZKE2WiOtzdHZ9G2iCWaDGVMvXTbfeyrYIJeyltn8SSc',
     APISECRET:'SuT2cu12uIhjB9mCeGj3D4TGM2EeiN8tNAKDxCXWswHz3T2SFZimK5bgUGLFyVmS'
@@ -21,21 +21,22 @@ const binance=new Binance().options({
 async function init(){
   
     let account=await binance.futuresAccount()
-    //console.log(account)
-    //let position=account.positions.find((position)=>position.symbol==='BTCUSDT')
+    // console.log(account.positions.filter((data)=>['BTCUSDT'].includes(data.symbol)))
+    // let position=account.positions.find((position)=>position.symbol==='BTCUSDT')
     // let position=account.positions.filter((position)=>position.positionAmt!=0)
-    
+    // console.log(account.positions)
     // let asset=account.assets.find((asset)=>asset.asset==='USDT')
     
     // console.log('Initial position :', position)
+    
     // console.log('Initial Asset : ',asset)
 
     console.log(await binance.futuresIncome())
     //console.log(this)
     //console.log(account.positions.find((position)=>position.symbol="BTCUSDT"))
     //console.log(account)
-
-    
+    // console.info( await binance.futuresCancelAll( "BNBUSDT" ) );
+    // console.info(await binance.futuresBuy( "BNBUSDT",0.04 ) );
 }
 
 init()
